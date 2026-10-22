@@ -26,6 +26,12 @@ class Extra:
         self.nombre = nombre
         self.precio = precio
 
+class Mesa:
+    def __init__(self, numero, capacidad):
+        self._numero = numero
+        self._capacidad = capacidad
+        self._ocupada = False
+
 platos = [
     Plato("1 Pollo a la brasa", 60),
     Plato("1/2 pollo", 32),
@@ -47,8 +53,68 @@ extras = [
     Extra("Gaseosa personal", 2)
 ]
 
+mesas = [
+    Mesa(1, 2),
+    Mesa(2, 2),
+    Mesa(3, 4),
+    Mesa(4, 4),
+    Mesa(5, 4),
+    Mesa(6, 6),
+    Mesa(7, 6),
+    Mesa(8, 8)
+]
+
 clientes = []
 restaurante = Restaurante("Los Pollos Hermanos")
+
+def mostrar_mesas(titulo, ocupadas):
+    lista = [m for m in mesas if m._ocupada == ocupadas]
+    if len(lista) == 0:
+        if ocupadas:
+            print("\nNo hay mesas ocupadas.")
+        else:
+            print("\nNo hay mesas disponibles.")
+        return lista
+    estado = "OCUPADA" if ocupadas else "LIBRE"
+    print("\n╔" + "═" * 52 + "╗")
+    print(f"║{'LOS POLLOS HERMANOS':^52}║")
+    print(f"║{titulo:^52}║")
+    print("╠" + "═" * 52 + "╣")
+    print(f"║   {'N.°':<6}{'CAPACIDAD':<30}{'ESTADO':>10}   ║")
+    print("╠" + "═" * 52 + "╣")
+    for m in lista:
+        capacidad = f"{m._capacidad} personas"
+        print(f"║   {m._numero:<6}{capacidad:<30}{estado:>10}   ║")
+    print("╚" + "═" * 52 + "╝")
+    return lista
+
+def consultar_mesas():
+    mostrar_mesas("MESAS DISPONIBLES", False)
+
+def elegir_mesa():
+    disponibles = mostrar_mesas("MESAS DISPONIBLES", False)
+    if len(disponibles) == 0:
+        return None
+    while True:
+        numero = int(input("Seleccione el número de la mesa: "))
+        for mesa in disponibles:
+            if mesa._numero == numero:
+                return mesa
+        print("La mesa seleccionada no existe o está ocupada.")
+
+def liberar_mesa():
+    ocupadas = mostrar_mesas("MESAS OCUPADAS", True)
+    if len(ocupadas) == 0:
+        return
+    numero = int(input("Ingrese el número de la mesa a liberar (0 para cancelar): "))
+    if numero == 0:
+        return
+    for mesa in ocupadas:
+        if mesa._numero == numero:
+            mesa._ocupada = False
+            print(f"Mesa {numero} liberada correctamente.")
+            return
+    print("La mesa indicada no está ocupada o no existe.")
 
 def seleccionar_opcion():
     print("""
@@ -80,11 +146,11 @@ def seleccionar_opcion():
         case 3:
             consultar_pedido()
         case 4:
-            print("Opción pendiente")
+            consultar_mesas()
         case 5:
             print("Opción pendiente")
         case 6:
-            print("Opción pendiente")
+            liberar_mesa()
         case 7:
             print("Gracias por utilizar nuestro sistema.")
             return False
@@ -219,6 +285,10 @@ def toma_pedido():
     if cliente_encontrado is None:
         print("No se encontró al cliente.")
         return
+    mesa_elegida = elegir_mesa()
+    if mesa_elegida is None:
+        print("No hay mesas disponibles por el momento.")
+        return
     pedido_actual = []
     mostrar_menu(pedido_actual)
     print("""
@@ -245,6 +315,8 @@ def toma_pedido():
         codigo_pedido = len(restaurante._pedidos) + 1
         pedido = Pedido(cliente_encontrado, codigo_pedido)
         pedido._platos.extend(pedido_actual)
+        mesa_elegida._ocupada = True
+        pedido._mesa = mesa_elegida
         restaurante._pedidos.append(pedido)
         print("""
 ╔════════════════════════════════════════════════════╗
@@ -253,6 +325,7 @@ def toma_pedido():
 """)
         print(f"Código del pedido: PED-{codigo_pedido:03d}")
         print(f"Cliente: {cliente_encontrado._nombre}")
+        print(f"Mesa: {mesa_elegida._numero}")
         print(f"Total registrado: S/ {total:.2f}")
     else:
         print("\nEl pedido no fue registrado.")
